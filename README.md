@@ -22,15 +22,18 @@ A premium, high-performance macOS network activity monitor that lives in your me
 
 ### 🛡️ macOS Gatekeeper (Important)
 
-Since SpeedBarrow is an independent project and not currently signed with an Apple Developer certificate, macOS will show a security warning when you first open it:
+Since SpeedBarrow is an independent project and not currently signed with an Apple Developer certificate, macOS will show a security warning when you first open it.
 
-> **"SpeedBarrow" can't be opened because it is from an unidentified developer.**
-
-**To open the app:**
+**Option 1: The Right-Click Method (Easiest)**
 1. Locate the app in **Finder** (Applications folder).
 2. **Right-click** (or Control-click) the app icon and select **Open**.
 3. A similar dialog will appear, but this time it will have an **Open** button. Click it.
-4. You only need to do this once! macOS will remember your choice.
+
+**Option 2: The Terminal Method (Advanced)**
+If you prefer using the terminal, run the following command to remove the quarantine flag:
+```bash
+xattr -cr /Applications/SpeedBarrow.app
+```
 
 ---
 
