@@ -42,68 +42,79 @@ class ProcessMonitor: ObservableObject {
     }
     
     private func updateSystemStats() async {
-        let output = await runCommand("/usr/sbin/netstat", arguments: ["-ib"])
+        let output = await runCommand("/usr/sbin/netstat", arguments: ["-ibn"])
         guard let output = output else { return }
-        
         let lines = output.components(separatedBy: .newlines)
         var totalIn: Double = 0
         var totalOut: Double = 0
-        
+        var seen: Set<String> = []
         for line in lines {
             let parts = line.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
-            if parts.contains("en0") || parts.contains("en1") {
-                if parts.count >= 10 {
-                    if let ibytes = Double(parts[6]), let obytes = Double(parts[9]) {
-                        totalIn += ibytes
-                        totalOut += obytes
+            guard parts.count >= 10 else { continue }
+            let iface = parts[0]
+            if (iface.hasPrefix("en") || iface.hasPrefix("ap") || iface.hasPrefix("wi")) && !seen.contains(iface) {
+                if line.contains("<Link") {
+                    if let ib = Double(parts[6]), let ob = Double(parts[9]) {
+                        totalIn += ib
+                        totalOut += ob
+                        seen.insert(iface)
                     }
                 }
             }
         }
-        
         let now = Date()
         let deltaT = now.timeIntervalSince(lastUpdate)
         if deltaT > 0 && prevSystemIn > 0 {
             self.systemLiveIn = max(0, (totalIn - prevSystemIn) / deltaT)
             self.systemLiveOut = max(0, (totalOut - prevSystemOut) / deltaT)
         }
-        
         prevSystemIn = totalIn
         prevSystemOut = totalOut
         lastUpdate = now
     }
     
     private func updateAppStats() async {
-        // Run nettop with -P (per-process) and -L 1 (one sample)
+        // Run the most basic nettop command
         let output = await runCommand("/usr/bin/nettop", arguments: ["-P", "-L", "1", "-n"])
         guard let output = output, !output.isEmpty else { return }
         
         let lines = output.components(separatedBy: .newlines)
         var currentMap: [String: (Double, Double)] = [:]
         
-        // Find column indices from header
-        var rxIndex = 4 // default
-        var txIndex = 5 // default
-        
-        if let header = lines.first {
-            let cols = header.components(separatedBy: ",").map { $0.trimmingCharacters(in: .whitespaces).lowercased() }
-            if let ri = cols.firstIndex(of: "rx_bytes") { rxIndex = ri }
-            if let ti = cols.firstIndex(of: "tx_bytes") { txIndex = ti }
-        }
-        
-        for line in lines.dropFirst() {
-            let parts = line.components(separatedBy: ",")
-            if parts.count <= max(rxIndex, txIndex) { continue }
+        for line in lines {
+            let parts = line.components(separatedBy: ",").map { $0.trimmingCharacters(in: .whitespaces) }
+            if parts.count < 6 { continue }
             
-            let namePart = parts[0]
-            if namePart.isEmpty || namePart == "time" { continue }
+            // nettop columns are usually: 
+            // 0: time (skip if it contains :)
+            // 1: process name
+            // 2: interface
+            // 3: state
+            // 4: rx_bytes
+            // 5: tx_bytes
+            
+            var nameIndex = 0
+            if parts[0].contains(":") { nameIndex = 1 } // Skip timestamp
+            
+            let namePart = parts[nameIndex]
+            if namePart.isEmpty || namePart.lowercased().contains("process") || namePart == "time" { continue }
             
             let name = namePart.components(separatedBy: ".").first ?? namePart
-            if name == "SpeedBarrow" || name == "process-name" { continue }
+            if name == "SpeedBarrow" { continue }
             
-            if let rx = Double(parts[rxIndex]), let tx = Double(parts[txIndex]) {
+            // Find rx/tx by looking for the largest numeric columns (usually indices 4 and 5)
+            // We search columns from index 2 to 7 to find the first two numbers
+            var bytes: [Double] = []
+            for i in (nameIndex + 1)..<min(parts.count, 10) {
+                if let val = Double(parts[i]) {
+                    bytes.append(val)
+                    if bytes.count == 2 { break }
+                }
+            }
+            
+            if bytes.count == 2 {
                 let existing = currentMap[name] ?? (0, 0)
-                currentMap[name] = (existing.0 + rx, existing.1 + tx)
+                currentMap[name] = (existing.0 + bytes[0], existing.1 + bytes[1])
             }
         }
         
@@ -117,8 +128,8 @@ class ProcessMonitor: ObservableObject {
             let newTotal = (total.0 + deltaIn, total.1 + deltaOut)
             accumulatedTotals[name] = newTotal
             
-            // Only add apps that have actually sent or received data in this session
-            if newTotal.0 > 0 || newTotal.1 > 0 {
+            // Show any app that has any historical activity or any live activity
+            if newTotal.0 > 0 || newTotal.1 > 0 || deltaIn > 0 || deltaOut > 0 {
                 apps.append(AppNetworkUsage(
                     id: name,
                     name: name,
@@ -131,7 +142,7 @@ class ProcessMonitor: ObservableObject {
             previousSnapshot[name] = raw
         }
         
-        // Sort by live activity, then by total
+        // Sort by live speed, then total bytes
         self.topApps = apps.sorted {
             let sA = $0.liveSpeedIn + $0.liveSpeedOut
             let sB = $1.liveSpeedIn + $1.liveSpeedOut
@@ -141,7 +152,7 @@ class ProcessMonitor: ObservableObject {
     }
     
     private func runCommand(_ path: String, arguments: [String]) async -> String? {
-        return await Task.detached(priority: .background) {
+        return await Task.detached(priority: .userInitiated) {
             let task = Process()
             task.launchPath = path
             task.arguments = arguments

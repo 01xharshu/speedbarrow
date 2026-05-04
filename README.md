@@ -1,24 +1,50 @@
-# SpeedBarrow 🚀
+# 🚀 SpeedBarrow
 
-SpeedBarrow is a premium macOS utility to monitor your network speed directly from your menu bar or in a beautiful dashboard.
+A premium, high-performance macOS network activity monitor that lives in your menu bar and provides a high-fidelity dashboard of your app-by-app data usage.
 
-## Features
-- **Live Menu Bar Stats**: Alternates between Download and Upload speeds.
-- **Testing Animation**: Live status feedback during speed tests.
-- **Premium Dashboard**: Glassmorphic UI with gauges, latency stats, and history.
-- **Smart Dock Behavior**: Stays in the menu bar; dock icon only appears when the window is open.
-- **HTTP-based Testing**: Robust throughput measurements using global CDN endpoints.
+![SpeedBarrow Icon](Assets.xcassets/AppIcon.appiconset/speedbarrow_app_icon_1777924928718%201.png)
 
-## Tech Stack
-- **SwiftUI**: For the modern, responsive UI.
-- **AppKit**: For deep integration with the macOS Menu Bar (NSStatusItem).
-- **Concurrency**: Swift async/await for non-blocking speed tests.
+## ✨ Features
 
-## How to Build
-1. Open the project in Xcode.
-2. Set the target to macOS 13.0+.
-3. In `Info.plist`, ensure `Application is agent (UIElement)` is set to `YES` to start as a menu bar app.
-4. Build and Run!
+- **Live Menu Bar Stats**: Real-time download and upload speeds at a glance.
+- **Per-App Monitoring**: See exactly which apps are consuming your bandwidth.
+- **Session Totals**: Track total data used during your current session.
+- **Privacy Focused**: No data is saved to disk; everything is cleared when the app is closed.
+- **Native & Lightweight**: Built with SwiftUI and optimized for macOS 13+.
 
-## Design
-The app features a "liquid glass" aesthetic with vibrant gradients and smooth animations, fitting perfectly into the modern macOS Ventura/Sonoma ecosystem.
+## 📥 Installation & Setup
+
+1. **Download**: Download the latest `SpeedBarrow.dmg` from the [Releases](https://github.com/YOUR_USERNAME/speedbarrow/releases) page.
+2. **Install**: Open the `.dmg` and drag `SpeedBarrow` to your **Applications** folder.
+3. **Open**: Double-click `SpeedBarrow` in your Applications folder.
+
+---
+
+### 🛡️ macOS Gatekeeper (Important)
+
+Since SpeedBarrow is an independent project and not currently signed with an Apple Developer certificate, macOS will show a security warning when you first open it:
+
+> **"SpeedBarrow" can't be opened because it is from an unidentified developer.**
+
+**To open the app:**
+1. Locate the app in **Finder** (Applications folder).
+2. **Right-click** (or Control-click) the app icon and select **Open**.
+3. A similar dialog will appear, but this time it will have an **Open** button. Click it.
+4. You only need to do this once! macOS will remember your choice.
+
+---
+
+## 🛠️ Build from Source
+
+If you want to build the app yourself:
+
+1. Clone the repository.
+2. Run the build script:
+   ```bash
+   ./build_app.sh
+   ```
+3. The `SpeedBarrow.app` bundle will be created in the root directory.
+
+## 📄 License
+
+MIT License - feel free to use and modify!
