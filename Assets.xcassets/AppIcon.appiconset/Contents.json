@@ -2,8 +2,8 @@
   "images" : [
     {
       "filename" : "speedbarrow_app_icon_1777924928718 1.png",
-      "idiom" : "universal",
-      "platform" : "ios",
+      "idiom" : "mac",
+      "scale" : "1x",
       "size" : "1024x1024"
     }
   ],

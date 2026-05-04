@@ -27,6 +27,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         // Ensure the app is activated and visible in the Dock
         NSApp.setActivationPolicy(.regular)
+        
+        // Open window automatically on launch
+        openMainWindow()
     }
     
     @objc func openMainWindow() {

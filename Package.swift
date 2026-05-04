@@ -13,7 +13,8 @@ let package = Package(
         .executableTarget(
             name: "SpeedBarrow",
             path: ".",
-            exclude: ["README.md"]
+            exclude: ["README.md"],
+            resources: [.process("Assets.xcassets")]
         )
     ]
 )
